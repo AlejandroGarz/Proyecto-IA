@@ -8,6 +8,7 @@ def es_valido(matriz, pos):
     x, y = pos
     return 0 <= x < len(matriz) and 0 <= y < len(matriz[0]) and matriz[x][y] != 1
 
+#busqueda por amplitub
 def bfs(matriz, inicio, objetivo):
     # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
@@ -30,6 +31,8 @@ def bfs(matriz, inicio, objetivo):
 
     return None, arbol  # Si no se encuentra camino, devolvemos None para ambos
 
+
+#busqueda por profundidad
 def dfs(matriz, inicio, objetivo):
     # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
@@ -57,7 +60,8 @@ def dfs(matriz, inicio, objetivo):
 def heuristica(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def a_estrella(matriz, inicio, objetivo):
+#busquedad A*
+def a_asterisco(matriz, inicio, objetivo):
     # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
         return None, None  # Si no es válido, retornamos None para ambos valores
