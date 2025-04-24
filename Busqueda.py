@@ -92,7 +92,7 @@ def heuristica(a, b):
 def avara(matriz, inicio, fin):
     filas = len(matriz)
     columnas = len(matriz[0])
-    priority_queue = [(manhattan_distance(inicio, fin), inicio, [inicio])] # (heurística, nodo, camino)
+    priority_queue = [(heuristica(inicio, fin), inicio, [inicio])] # (heurística, nodo, camino)
     visitados = {inicio}
     arbol_busqueda = [inicio]
 
@@ -110,7 +110,7 @@ def avara(matriz, inicio, fin):
                 visitados.add(nuevo_nodo)
                 nuevo_camino = list(camino_actual)
                 nuevo_camino.append(nuevo_nodo)
-                prioridad = manhattan_distance(nuevo_nodo, fin)
+                prioridad = heuristica(nuevo_nodo, fin)
                 heapq.heappush(priority_queue, (prioridad, nuevo_nodo, nuevo_camino))
                 arbol_busqueda.append(nuevo_nodo)
 

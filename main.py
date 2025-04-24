@@ -1,4 +1,3 @@
-# main.py
 from interfaz import iniciar_simulacion
 
 if __name__ == "__main__":
