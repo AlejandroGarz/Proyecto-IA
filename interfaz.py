@@ -30,6 +30,9 @@ def iniciar_simulacion():
     tecnicas_seleccionadas = ["A*"]
     metodo_actual = tecnicas_seleccionadas[0] if tecnicas_seleccionadas else "A*"
 
+    costos_por_tecnica = {"BFS": 0, "DFS": 0, "Costo Uniforme": 0, "Avara": 0, "A*": 0}
+    contador_por_tecnica = {"BFS": 0, "DFS": 0, "Costo Uniforme": 0, "Avara": 0, "A*": 0}
+
     def generar_matriz_inicial(filas, columnas, num_paredes=45, num_enemigos=3, queso_pos=None):
         matriz = [[0 for _ in range(columnas)] for _ in range(filas)]
         paredes_colocadas = 0
@@ -319,7 +322,47 @@ def iniciar_simulacion():
                     if boton_reiniciar.collidepoint(evento.pos):
                         matriz, pos_agente, metodo_actual, llego_queso, costo_total_agente = resetear_juego(FILAS, COLUMNAS, matriz_configuracion, tecnicas_seleccionadas)
                         costo_total_agente = 0
+                        llego_queso = False
                         print("Juego reiniciado.")
+                        # Lógica para seleccionar la técnica más óptima
+                        mejor_tecnica = None
+                        costo_promedio_minimo = float('inf')
+                        for tecnica, total_costo in costos_por_tecnica.items():
+                            if contador_por_tecnica[tecnica] > 0:
+                                costo_promedio = total_costo / contador_por_tecnica[tecnica]
+                                if costo_promedio < costo_promedio_minimo:
+                                    costo_promedio_minimo = costo_promedio
+                                    mejor_tecnica = tecnica
+                        if mejor_tecnica:
+                            metodo_actual = mejor_tecnica
+                            print(f"Seleccionando la técnica más óptima basada en el costo promedio: {metodo_actual}")
+                        else:
+                            # Si no hay datos suficientes, mantener la técnica actual o elegir una por defecto
+                            print("No hay suficientes datos para seleccionar la técnica más óptima.")
+
+                    elif llego_queso:
+                        # Esperar un tiempo o una acción del usuario antes de reiniciar para el siguiente intento
+                        pygame.time.delay(2000) # Esperar 2 segundos
+
+                        # Resetear el juego para el siguiente intento
+                        matriz, pos_agente, metodo_actual, llego_queso, costo_total_agente = resetear_juego(FILAS, COLUMNAS, matriz_configuracion, tecnicas_seleccionadas)
+
+                        # Lógica para seleccionar la técnica más óptima para el siguiente intento
+                        mejor_tecnica = None
+                        costo_promedio_minimo = float('inf')
+                        for tecnica, total_costo in costos_por_tecnica.items():
+                            if contador_por_tecnica[tecnica] > 0:
+                                costo_promedio = total_costo / contador_por_tecnica[tecnica]
+                                if costo_promedio < costo_promedio_minimo:
+                                    costo_promedio_minimo = costo_promedio
+                                    mejor_tecnica = tecnica
+                        if mejor_tecnica:
+                            metodo_actual = mejor_tecnica
+                            print(f"Para el siguiente intento, se usará la técnica más óptima: {metodo_actual}")
+                        else:
+                            print("No hay suficientes datos para seleccionar la técnica más óptima. Se usará la técnica actual.")
+
+
                     elif boton_costo.collidepoint(evento.pos):
                         print(f"Costo total del agente: {costo_total_agente}")
                     elif boton_regresar_menu.collidepoint(evento.pos):
@@ -449,16 +492,36 @@ def iniciar_simulacion():
                         matriz[pos_agente[0]][pos_agente[1]] = 0
                         pos_agente = siguiente_pos
                         matriz[pos_agente[0]][pos_agente[1]] = 4
+
+                        if pos_agente == objetivo:
+                            llego_queso = True
+                            print(f"¡El agente encontró el queso usando {metodo_actual} con un costo de {costo_total_agente}!")
+                            costos_por_tecnica[metodo_actual] += costo_total_agente
+                            contador_por_tecnica[metodo_actual] += 1
+                            costo_total_agente = 0 # Resetear el costo para el siguiente intento
                     elif pos_agente == objetivo:
                         llego_queso = True
-                        print("¡El agente encontró el queso!")
+                        print(f"¡El agente encontró el queso usando {metodo_actual} con un costo de {costo_total_agente}!")
+                        costos_por_tecnica[metodo_actual] += costo_total_agente
+                        contador_por_tecnica[metodo_actual] += 1
+                        costo_total_agente = 0 # Resetear el costo para el siguiente intento
+                    # Si no se encuentra un camino con la técnica actual
                     else:
-                        print(f"No se encontró un camino con {metodo_actual}. Cambiando de técnica...")
+                        print(f"No se encontró un camino con {metodo_actual}.")
+                        # Intentar cambiar a la siguiente técnica disponible
                         if len(tecnicas_seleccionadas) > 1:
-                            indice_actual = tecnicas_seleccionadas.index(metodo_actual)
-                            indice_siguiente = (indice_actual + 1) % len(tecnicas_seleccionadas)
-                            metodo_actual = tecnicas_seleccionadas[indice_siguiente]
-                            print(f"Nueva técnica: {metodo_actual}")
+                            indice_actual = -1
+                            try:
+                                indice_actual = tecnicas_seleccionadas.index(metodo_actual)
+                            except ValueError:
+                                pass # La técnica actual ya no está en la lista (posible error)
+
+                            if indice_actual != -1:
+                                indice_siguiente = (indice_actual + 1) % len(tecnicas_seleccionadas)
+                                metodo_actual = tecnicas_seleccionadas[indice_siguiente]
+                                print(f"Cambiando a la siguiente técnica: {metodo_actual}")
+                            else:
+                                print("Error al cambiar de técnica o la técnica actual no es válida.")
                         else:
                             print("No hay más técnicas para probar.")
                 else:
