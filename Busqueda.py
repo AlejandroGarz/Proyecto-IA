@@ -5,14 +5,15 @@ import heapq
 direcciones = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 def es_valido(matriz, pos):
-    x, y = pos
-    return 0 <= x < len(matriz) and 0 <= y < len(matriz[0]) and matriz[x][y] != 1
+    filas = len(matriz)
+    columnas = len(matriz[0])
+    r, c = pos
+    return 0 <= r < filas and 0 <= c < columnas and matriz[r][c] != 1
 
 #busqueda por amplitub
 def bfs(matriz, inicio, objetivo):
-    # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
-        return None, None  # Si no es válido, retornamos None para ambos valores
+        return None, None  
 
     visitado = set([inicio])
     cola = deque([(inicio, [inicio])])
@@ -34,9 +35,8 @@ def bfs(matriz, inicio, objetivo):
 
 #busqueda por profundidad
 def dfs(matriz, inicio, objetivo):
-    # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
-        return None, None  # Si no es válido, retornamos None para ambos valores
+        return None, None 
 
     pila = [(inicio, [inicio])]
     visitado = set()
@@ -118,9 +118,8 @@ def avara(matriz, inicio, fin):
 
 #busquedad A*
 def a_asterisco(matriz, inicio, objetivo):
-    # Asegúrate de que el inicio y el objetivo sean válidos
     if not es_valido(matriz, inicio) or not es_valido(matriz, objetivo):
-        return None, None  # Si no es válido, retornamos None para ambos valores
+        return None, None 
 
     cola = [(0 + heuristica(inicio, objetivo), 0, inicio, [inicio])]
     visitado = set()

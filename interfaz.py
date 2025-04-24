@@ -25,7 +25,12 @@ def iniciar_simulacion():
     FILAS_INICIAL = 10
     COLUMNAS_INICIAL = 10
 
-    def generar_matriz_inicial(filas, columnas, num_paredes=15, num_enemigos=3, queso_pos=None):
+    global FILAS, COLUMNAS, matriz_configuracion, pos_agente, llego_queso, costo_total_agente, metodo_actual
+
+    tecnicas_seleccionadas = ["A*"]
+    metodo_actual = tecnicas_seleccionadas[0] if tecnicas_seleccionadas else "A*"
+
+    def generar_matriz_inicial(filas, columnas, num_paredes=45, num_enemigos=3, queso_pos=None):
         matriz = [[0 for _ in range(columnas)] for _ in range(filas)]
         paredes_colocadas = 0
         while paredes_colocadas < num_paredes:
@@ -56,7 +61,7 @@ def iniciar_simulacion():
                 matriz[r][c] = 2
                 enemigos_colocados += 1
         return matriz
-
+    
     def resetear_juego(filas, columnas, matriz_inicial, tecnicas_seleccionadas):
         agente_pos = None
         queso_pos = None
@@ -84,10 +89,8 @@ def iniciar_simulacion():
     FILAS, COLUMNAS = FILAS_INICIAL, COLUMNAS_INICIAL
     matriz_configuracion = generar_matriz_inicial(FILAS, COLUMNAS)
     pos_agente = (0, 0)
-    metodo_actual = "A*"
     llego_queso = False
     costo_total_agente = 0
-    tecnicas_seleccionadas = ["A*"]
     juego_iniciado = False
     modo_queso_huida = True
 
@@ -135,19 +138,21 @@ def iniciar_simulacion():
         return None
 
     def mover_queso_huir(pos_agente, current_matriz):
-        pos_actual = encontrar_queso(current_matriz)
-        if pos_actual:
-            posibles = [(pos_actual[0] + dx, pos_actual[1] + dy) for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]]
-            mejor_opcion = pos_actual
-            max_distancia = -1
-            for ni, nj in posibles:
-                if 0 <= ni < FILAS and 0 <= nj < COLUMNAS and current_matriz[ni][nj] == 0:
-                    distancia = abs(ni - pos_agente[0]) + abs(nj - pos_agente[1])
-                    if distancia > max_distancia:
-                        max_distancia = distancia
-                        mejor_opcion = (ni, nj)
-            current_matriz[pos_actual[0]][pos_actual[1]] = 0
-            current_matriz[mejor_opcion[0]][mejor_opcion[1]] = 3
+        if random.randint(0, 100) < 50: # El queso solo se mueve con un 50% de probabilidad
+            pos_actual = encontrar_queso(current_matriz)
+            if pos_actual:
+                posibles = [(pos_actual[0] + dx, pos_actual[1] + dy) for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]]
+                mejor_opcion = pos_actual
+                max_distancia = -1
+                for ni, nj in posibles:
+                    if 0 <= ni < FILAS and 0 <= nj < COLUMNAS and current_matriz[ni][nj] == 0:
+                        distancia = abs(ni - pos_agente[0]) + abs(nj - pos_agente[1])
+                        if distancia > max_distancia:
+                            max_distancia = distancia
+                            mejor_opcion = (ni, nj)
+                if mejor_opcion != pos_actual: # Solo mover si se encontró una mejor opción
+                    current_matriz[pos_actual[0]][pos_actual[1]] = 0
+                    current_matriz[mejor_opcion[0]][mejor_opcion[1]] = 3
         return current_matriz
 
     def mover_queso_aleatorio(current_matriz):
@@ -184,10 +189,12 @@ def iniciar_simulacion():
         return current_matriz
 
     def buscar_camino(metodo, current_matriz, inicio, fin):
-        if metodo == "DFS":
-            return dfs(current_matriz, inicio, fin)
-        elif metodo == "BFS":
+        #limite = 50 #limite de pasos
+
+        if metodo == "BFS":
             return bfs_matrix(current_matriz, inicio, fin)
+        elif metodo == "DFS":
+            return dfs(current_matriz, inicio, fin)#, limite)
         elif metodo == "Costo Uniforme":
             return costo_uniforme(current_matriz, inicio, fin)
         elif metodo == "Avara":
@@ -229,7 +236,7 @@ def iniciar_simulacion():
     juego_iniciado = False
     modo_queso_huida = True
     camino = None  # Inicializar la variable camino aquí
-
+    
     # ==== SETUP DE PYGAME ====
     ANCHO_TOTAL = ANCHO + 300
     ventana = pygame.display.set_mode((ANCHO_TOTAL, ALTO + 150))
@@ -282,13 +289,14 @@ def iniciar_simulacion():
                         activo_filas = False
                     elif boton_generar.collidepoint(evento.pos):
                         try:
-                            filas = int(texto_filas)
-                            columnas = int(texto_columnas)
-                            if 5 <= filas <= 30 and 5 <= columnas <= 30:
-                                FILAS, COLUMNAS = filas, columnas
+                            nuevas_filas = int(texto_filas)
+                            nuevas_columnas = int(texto_columnas)
+                            if nuevas_filas > 0 and nuevas_columnas > 0:
+                                FILAS = nuevas_filas
+                                COLUMNAS = nuevas_columnas
                                 matriz_configuracion = generar_matriz_inicial(FILAS, COLUMNAS)
-                            else:
-                                print("Dimensiones del laberinto fuera de rango (5-30).")
+                                matriz, pos_agente, metodo_actual, llego_queso, costo_total_agente = resetear_juego(FILAS, COLUMNAS, matriz_configuracion, tecnicas_seleccionadas)
+                                print(f"Laberinto redimensionado a {FILAS}x{COLUMNAS}")
                         except ValueError:
                             print("Por favor, introduce números válidos para filas y columnas.")
                     elif boton_inicio.collidepoint(evento.pos):
@@ -340,7 +348,7 @@ def iniciar_simulacion():
         ventana.fill(GRIS)
 
         if config_activa:
-            texto_filas_label = fuente_config.render("Filas:", True, NEGRO)
+            """texto_filas_label = fuente_config.render("Filas:", True, NEGRO)
             ventana.blit(texto_filas_label, (ANCHO + 20, 30))
             pygame.draw.rect(ventana, color_filas, input_filas, 2)
             texto_superficie_filas = fuente_config.render(texto_filas, True, NEGRO)
@@ -355,7 +363,7 @@ def iniciar_simulacion():
             pygame.draw.rect(ventana, (100, 100, 100), boton_generar)
             texto_generar = fuente_config.render("Generar Laberinto", True, BLANCO)
             texto_rect_generar = texto_generar.get_rect(center=boton_generar.center)
-            ventana.blit(texto_generar, texto_rect_generar)
+            ventana.blit(texto_generar, texto_rect_generar)"""
 
             texto_tecnicas_label = fuente_config.render("Técnicas de Búsqueda:", True, NEGRO)
             ventana.blit(texto_tecnicas_label, (ANCHO + 20, 150))
@@ -429,7 +437,8 @@ def iniciar_simulacion():
                 grafo = crear_grafo_desde_matriz(matriz)
                 objetivo = encontrar_queso(matriz)
                 if objetivo:
-                    camino, _ = buscar_camino(metodo_actual, matriz, pos_agente, objetivo)
+                    camino, arbol = buscar_camino(metodo_actual, matriz, pos_agente, objetivo)
+                    print(f"La función buscar_camino devolvió: (camino={camino}, arbol={arbol}) con la técnica: {metodo_actual}")
                     if camino and len(camino) > 1:
                         siguiente_pos = camino[1]
                         costo_movimiento = 1
@@ -461,7 +470,7 @@ def iniciar_simulacion():
                     else:
                         matriz = mover_queso_aleatorio(matriz)
                     matriz = mover_enemigos(pos_agente, matriz, metodo_actual)
-                    if random.randint(0, 100) < 3:
+                    if random.randint(0, 100) < 60: # Mover pared con un 10% de probabilidad
                         matriz = mover_pared_aleatorio(matriz)
 
         pygame.display.flip()
